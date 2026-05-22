@@ -82,13 +82,32 @@ export default function Navbar() {
       <Link href="/explore" className="navbar-brand">
         I<span>Rate</span>
       </Link>
-      <button
-        className="navbar-toggle"
-        onClick={() => setMenuOpen(!menuOpen)}
-        aria-label="Toggle menu"
-      >
-        <span className={`hamburger ${menuOpen ? "open" : ""}`} />
-      </button>
+      <div className="navbar-right-mobile">
+        {user && (
+          <div className="notif-wrapper">
+            <button
+              className={`notif-bell ${unreadCount > 0 ? "has-unread" : ""}`}
+              onClick={() => setShowNotifs(!showNotifs)}
+            >
+              <Bell size={16} />
+              {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
+            </button>
+            {showNotifs && (
+              <NotificationsDropdown
+                onClose={() => setShowNotifs(false)}
+                onRead={() => setUnreadCount(0)}
+              />
+            )}
+          </div>
+        )}
+        <button
+          className="navbar-toggle"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle menu"
+        >
+          <span className={`hamburger ${menuOpen ? "open" : ""}`} />
+        </button>
+      </div>
       {menuOpen && <div className="navbar-overlay" onClick={() => setMenuOpen(false)} />}
       <div className={`navbar-links ${menuOpen ? "show" : ""}`}>
         {user && (
@@ -105,23 +124,6 @@ export default function Navbar() {
           <Link href="/profile" className={`navbar-link ${pathname === "/profile" ? "active" : ""}`} onClick={() => setMenuOpen(false)}>
             Profile
           </Link>
-        )}
-        {user && (
-          <div className="notif-wrapper">
-            <button
-              className="navbar-link notif-bell"
-              onClick={() => setShowNotifs(!showNotifs)}
-            >
-              <Bell size={16} />
-              {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
-            </button>
-            {showNotifs && (
-              <NotificationsDropdown
-                onClose={() => setShowNotifs(false)}
-                onRead={() => setUnreadCount(0)}
-              />
-            )}
-          </div>
         )}
         {!loading && !user && (
           <div ref={googleBtnRef} className="google-btn-wrapper" />

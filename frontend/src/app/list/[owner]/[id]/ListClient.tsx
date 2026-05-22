@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Share2, ArrowLeft, Copy, User, MessageCircle, Send, Heart, Flame, Star, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Share2, ArrowLeft, Copy, User, MessageCircle, Send, Heart, Pencil, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import ShareModal from "../../../components/ShareModal";
 import { api, ListDetail, ListItemOut, CommentOut, LikeSummary } from "../../../lib/api";
@@ -11,8 +11,6 @@ import { useAuth } from "../../../lib/auth-context";
 
 const EMOJIS = [
   { key: "heart", icon: <Heart size={14} />, label: "Love" },
-  { key: "fire", icon: <Flame size={14} />, label: "Fire" },
-  { key: "star", icon: <Star size={14} />, label: "Star" },
 ];
 
 function renderStars(score: number) {
@@ -301,9 +299,13 @@ export default function ListClient() {
       </div>
 
       <div className="list-header">
-        <h2>{listData.title}</h2>
-        <p className="description">{listData.description}</p>
-        {renderLikeButtons()}
+        <div className="list-header-top">
+          <div>
+            <h2>{listData.title}</h2>
+            <p className="description">{listData.description}</p>
+          </div>
+          {renderLikeButtons()}
+        </div>
       </div>
 
       {/* Comments section - visible to all logged in users */}
@@ -380,9 +382,9 @@ export default function ListClient() {
                   <div className="item-info">
                     <h4>{item.name}</h4>
                     {item.comment && <p className="note">{item.comment}</p>}
-                    {renderLikeButtons(item.id)}
                   </div>
                   <div className="item-rating">
+                    {renderLikeButtons(item.id)}
                     <span className={`score ${item.score === 0 ? "unrated" : ""}`}>{item.score > 0 ? item.score : "—"}</span>
                     {itemComments.length > 0 && (
                       <span
