@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Plus } from "lucide-react";
 import { api, ListOut } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import SignInModal from "../components/SignInModal";
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   "Movies",
   "Games",
   "Beers",
@@ -30,12 +30,44 @@ export default function ExplorePage() {
   const [lists, setLists] = useState<ListOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [form, setForm] = useState({ title: "", description: "", category: "", customCategory: "" });
+
+  useEffect(() => {
+    api.getCategories().then((stored) => {
+      const merged = Array.from(new Set([...DEFAULT_CATEGORIES, ...stored]));
+      setCategories(merged);
+    }).catch(() => {});
+  }, []);
 
   const handleCreateList = () => {
     if (user) {
-      router.push("/lists");
+      setShowModal(true);
     } else {
       setShowSignIn(true);
+    }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const category = form.category === "__custom" ? form.customCategory : form.category || undefined;
+
+    if (form.category === "__custom" && form.customCategory && !categories.includes(form.customCategory)) {
+      setCategories([...categories, form.customCategory]);
+    }
+
+    try {
+      await api.createList({
+        title: form.title,
+        description: form.description || undefined,
+        category,
+      });
+      setForm({ title: "", description: "", category: "", customCategory: "" });
+      setShowModal(false);
+      router.push("/lists");
+    } catch (err) {
+      console.error("Failed to create list:", err);
     }
   };
 
@@ -86,7 +118,7 @@ export default function ExplorePage() {
         >
           All
         </button>
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat}
             className={`pill ${activeCategory === cat ? "active" : ""}`}
@@ -135,6 +167,78 @@ export default function ExplorePage() {
           ))}
         </div>
       )}
+
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            className="modal-overlay"
+            onClick={() => setShowModal(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="modal"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <h2>Create a New List</h2>
+              <form onSubmit={handleCreate}>
+                <div className="form-group">
+                  <label>Title</label>
+                  <input
+                    required
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="e.g. Best Pizza in Brooklyn"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Category <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(optional)</span></label>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  >
+                    <option value="">No category</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value="__custom">+ Add new category</option>
+                  </select>
+                </div>
+                {form.category === "__custom" && (
+                  <div className="form-group">
+                    <label>New Category Name</label>
+                    <input
+                      required
+                      value={form.customCategory}
+                      onChange={(e) => setForm({ ...form, customCategory: e.target.value })}
+                      placeholder="e.g. Nap Spots, Fonts, Sunsets"
+                    />
+                  </div>
+                )}
+                <div className="form-group">
+                  <label>Description</label>
+                  <input
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="What are you rating?"
+                  />
+                </div>
+                <div className="form-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn">Create</button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <SignInModal
         open={showSignIn}

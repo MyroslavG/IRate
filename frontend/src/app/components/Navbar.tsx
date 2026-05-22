@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
@@ -26,9 +26,15 @@ export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, loading, loginWithGoogle, logout } = useAuth();
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+  const renderedRef = useRef(false);
 
-  const googleButtonRef = useCallback((node: HTMLDivElement | null) => {
-    if (node && window.google && !user && !loading) {
+  useEffect(() => {
+    if (user || loading || renderedRef.current) return;
+
+    const renderButton = () => {
+      if (!googleBtnRef.current || !window.google || renderedRef.current) return;
+      renderedRef.current = true;
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: async (response: { credential: string }) => {
@@ -39,18 +45,28 @@ export default function Navbar() {
           }
         },
       });
-      window.google.accounts.id.renderButton(node, {
+      window.google.accounts.id.renderButton(googleBtnRef.current, {
         theme: "filled_black",
         size: "medium",
         shape: "pill",
         text: "signin_with",
       });
+    };
+
+    if (window.google) {
+      renderButton();
+    } else {
+      const script = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+      if (script) {
+        script.addEventListener("load", renderButton);
+        return () => script.removeEventListener("load", renderButton);
+      }
     }
   }, [user, loading, loginWithGoogle]);
 
   return (
     <nav className="navbar">
-      <Link href="/" className="navbar-brand">
+      <Link href="/explore" className="navbar-brand">
         I<span>Rate</span>
       </Link>
       <button
@@ -78,7 +94,7 @@ export default function Navbar() {
           </Link>
         )}
         {!loading && !user && (
-          <div ref={googleButtonRef} className="google-btn-wrapper" />
+          <div ref={googleBtnRef} className="google-btn-wrapper" />
         )}
         {user && (
           <button className="navbar-link navbar-logout" onClick={() => { logout(); setMenuOpen(false); }}>

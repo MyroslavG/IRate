@@ -33,6 +33,13 @@ export default function ListsPage() {
   const [form, setForm] = useState({ title: "", description: "", category: "", customCategory: "" });
 
   useEffect(() => {
+    api.getCategories().then((stored) => {
+      const merged = Array.from(new Set([...CATEGORIES, ...stored]));
+      setCategories(merged);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (authLoading) return;
     if (!user) { router.push("/"); return; }
     api.getMyLists().then(setLists).catch(() => {}).finally(() => setLoading(false));
@@ -48,8 +55,7 @@ export default function ListsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const category = form.category === "__custom" ? form.customCategory : form.category;
-    if (!category) return;
+    const category = form.category === "__custom" ? form.customCategory : form.category || undefined;
 
     if (form.category === "__custom" && form.customCategory && !categories.includes(form.customCategory)) {
       setCategories([...categories, form.customCategory]);
@@ -169,13 +175,12 @@ export default function ListsPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Category</label>
+                  <label>Category <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(optional)</span></label>
                   <select
-                    required
                     value={form.category}
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
                   >
-                    <option value="">Select a category...</option>
+                    <option value="">No category</option>
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}

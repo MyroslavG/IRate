@@ -120,7 +120,7 @@ export default function ShareModal({
   topItems,
 }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
-  const shareUrl = `https://irate.app/${owner}/${listId}`;
+  const shareUrl = `https://i-rate-pearl.vercel.app/list/${owner}/${listId}`;
   const shareText = generateShareText(listTitle, topItems);
 
   const handleCopyLink = () => {
