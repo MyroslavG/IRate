@@ -63,8 +63,17 @@ body {
 
 .navbar-links {
   display: flex;
+  align-items: center;
   gap: 0.2rem;
   margin-left: auto;
+}
+
+.navbar-right-mobile {
+  display: none;
+}
+
+.notif-desktop {
+  display: flex;
 }
 
 .navbar-link {
@@ -1522,6 +1531,17 @@ body {
     padding: 0.75rem 1rem;
   }
 
+  .navbar-right-mobile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  .notif-desktop {
+    display: none;
+  }
+
   .navbar-toggle {
     display: block;
     z-index: 1001;
@@ -1752,11 +1772,6 @@ body {
 }
 
 /* --- Notifications --- */
-.navbar-right-mobile {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
 
 .notif-wrapper {
   position: relative;

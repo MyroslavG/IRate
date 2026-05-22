@@ -125,6 +125,23 @@ export default function Navbar() {
             Profile
           </Link>
         )}
+        {user && (
+          <div className="notif-wrapper notif-desktop">
+            <button
+              className={`notif-bell ${unreadCount > 0 ? "has-unread" : ""}`}
+              onClick={() => setShowNotifs(!showNotifs)}
+            >
+              <Bell size={16} />
+              {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
+            </button>
+            {showNotifs && (
+              <NotificationsDropdown
+                onClose={() => setShowNotifs(false)}
+                onRead={() => setUnreadCount(0)}
+              />
+            )}
+          </div>
+        )}
         {!loading && !user && (
           <div ref={googleBtnRef} className="google-btn-wrapper" />
         )}
