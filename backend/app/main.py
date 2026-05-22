@@ -212,18 +212,6 @@ def copy_list(list_id: int, current_user: User = Depends(get_current_user), db: 
         owner_id=current_user.id,
     )
     db.add(new_list)
-    db.flush()
-
-    for item in original.items:
-        new_item = ListItem(
-            name=item.name,
-            score=item.score,
-            comment=item.comment,
-            position=item.position,
-            list_id=new_list.id,
-        )
-        db.add(new_item)
-
     db.commit()
     db.refresh(new_list)
     return _list_to_detail(new_list)
