@@ -159,8 +159,9 @@ export default function ExplorePage() {
                   </span>
                 </div>
                 <div className="list-card-stats">
-                  <div className="count">{list.item_count}</div>
-                  items
+                  <div className="list-card-stat-row">
+                    <span className="count">{list.item_count}</span> items
+                  </div>
                   {list.like_count > 0 && (
                     <div className="list-card-likes">
                       <Heart size={12} /> {list.like_count}

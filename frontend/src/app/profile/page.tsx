@@ -5,19 +5,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Globe, Lock } from "lucide-react";
-import { api, ListOut } from "../lib/api";
+import { api, ListOut, FollowStats } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 
 export default function ProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [lists, setLists] = useState<ListOut[]>([]);
+  const [followStats, setFollowStats] = useState<FollowStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) { router.push("/"); return; }
-    api.getMyLists().then(setLists).catch(() => {}).finally(() => setLoading(false));
+    Promise.all([
+      api.getMyLists(),
+      api.getFollowStats(user.username),
+    ]).then(([myLists, stats]) => {
+      setLists(myLists);
+      setFollowStats(stats);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [user, authLoading, router]);
 
   const toggleVisibility = async (list: ListOut) => {
@@ -63,10 +70,18 @@ export default function ProfilePage() {
           <div className="value">{totalItems}</div>
           <div className="label">Ratings</div>
         </div>
-        <div className="profile-stat">
-          <div className="value">{topCategory}</div>
-          <div className="label">Top Category</div>
-        </div>
+        {followStats && (
+          <>
+            <div className="profile-stat">
+              <div className="value">{followStats.followers_count}</div>
+              <div className="label">Followers</div>
+            </div>
+            <div className="profile-stat">
+              <div className="value">{followStats.following_count}</div>
+              <div className="label">Following</div>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="lists-grid">

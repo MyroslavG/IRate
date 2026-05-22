@@ -137,3 +137,34 @@ class LikeSummary(BaseModel):
     emoji: str
     count: int
     user_liked: bool
+
+
+# --- Follow ---
+
+class FollowOut(BaseModel):
+    id: int
+    follower_id: int
+    following_id: int
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class FollowStats(BaseModel):
+    followers_count: int
+    following_count: int
+    is_following: bool
+
+
+# --- Notifications ---
+
+class NotificationOut(BaseModel):
+    id: int
+    type: str
+    actor: UserOut
+    list_id: int | None
+    list_title: str | None = None
+    read: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

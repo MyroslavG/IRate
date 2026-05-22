@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Bell } from "lucide-react";
 import { useAuth } from "../lib/auth-context";
+import { api } from "../lib/api";
+import NotificationsDropdown from "./NotificationsDropdown";
 
 declare global {
   interface Window {
@@ -28,6 +30,17 @@ export default function Navbar() {
   const { user, loading, loginWithGoogle, logout } = useAuth();
   const googleBtnRef = useRef<HTMLDivElement>(null);
   const renderedRef = useRef(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifs, setShowNotifs] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    api.getUnreadCount().then((d) => setUnreadCount(d.count)).catch(() => {});
+    const interval = setInterval(() => {
+      api.getUnreadCount().then((d) => setUnreadCount(d.count)).catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   useEffect(() => {
     if (user || loading || renderedRef.current) return;
@@ -92,6 +105,23 @@ export default function Navbar() {
           <Link href="/profile" className={`navbar-link ${pathname === "/profile" ? "active" : ""}`} onClick={() => setMenuOpen(false)}>
             Profile
           </Link>
+        )}
+        {user && (
+          <div className="notif-wrapper">
+            <button
+              className="navbar-link notif-bell"
+              onClick={() => setShowNotifs(!showNotifs)}
+            >
+              <Bell size={16} />
+              {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
+            </button>
+            {showNotifs && (
+              <NotificationsDropdown
+                onClose={() => setShowNotifs(false)}
+                onRead={() => setUnreadCount(0)}
+              />
+            )}
+          </div>
         )}
         {!loading && !user && (
           <div ref={googleBtnRef} className="google-btn-wrapper" />

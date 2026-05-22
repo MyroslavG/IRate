@@ -137,8 +137,9 @@ export default function ListsPage() {
                   </span>
                 </div>
                 <div className="list-card-stats">
-                  <div className="count">{list.item_count}</div>
-                  items
+                  <div className="list-card-stat-row">
+                    <span className="count">{list.item_count}</span> items
+                  </div>
                 </div>
               </Link>
             </motion.div>

@@ -192,6 +192,32 @@ class ApiClient {
     return this.request<ListOut[]>(`/api/users/${username}/lists`);
   }
 
+  // Follow
+  async followUser(username: string) {
+    return this.request<FollowOut>(`/api/follow/${username}`, { method: "POST" });
+  }
+
+  async unfollowUser(username: string) {
+    return this.request<void>(`/api/follow/${username}`, { method: "DELETE" });
+  }
+
+  async getFollowStats(username: string) {
+    return this.request<FollowStats>(`/api/follow/${username}/stats`);
+  }
+
+  // Notifications
+  async getNotifications() {
+    return this.request<NotificationOut[]>("/api/notifications");
+  }
+
+  async getUnreadCount() {
+    return this.request<{ count: number }>("/api/notifications/unread-count");
+  }
+
+  async markNotificationsRead() {
+    return this.request<void>("/api/notifications/mark-read", { method: "POST" });
+  }
+
   // Categories
   async getCategories() {
     return this.request<string[]>("/api/categories");
@@ -269,6 +295,29 @@ export interface LikeSummary {
   emoji: string;
   count: number;
   user_liked: boolean;
+}
+
+export interface FollowOut {
+  id: number;
+  follower_id: number;
+  following_id: number;
+  created_at: string;
+}
+
+export interface FollowStats {
+  followers_count: number;
+  following_count: number;
+  is_following: boolean;
+}
+
+export interface NotificationOut {
+  id: number;
+  type: string;
+  actor: User;
+  list_id: number | null;
+  list_title: string | null;
+  read: boolean;
+  created_at: string;
 }
 
 // Singleton

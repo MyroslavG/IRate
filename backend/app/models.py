@@ -110,3 +110,31 @@ class Like(Base):
     user = relationship("User")
     list_rel = relationship("List")
     item = relationship("ListItem")
+
+
+class Follow(Base):
+    __tablename__ = "follows"
+
+    id = Column(Integer, primary_key=True, index=True)
+    follower_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    following_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    follower = relationship("User", foreign_keys=[follower_id])
+    following = relationship("User", foreign_keys=[following_id])
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # recipient
+    actor_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # who did it
+    type = Column(String(20), nullable=False)  # like, comment, follow, copy
+    list_id = Column(Integer, ForeignKey("lists.id"), nullable=True)
+    read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", foreign_keys=[user_id])
+    actor = relationship("User", foreign_keys=[actor_id])
+    list_rel = relationship("List")
