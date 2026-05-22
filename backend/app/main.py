@@ -149,6 +149,44 @@ def create_list(data: ListCreate, current_user: User = Depends(get_current_user)
     return _list_to_detail(new_list)
 
 
+@app.get("/api/lists/{list_id}/comments", response_model=list[CommentOut])
+def list_comments(list_id: int, db: Session = Depends(get_db)):
+    lst = db.query(List).filter(List.id == list_id).first()
+    if not lst:
+        raise HTTPException(status_code=404, detail="List not found")
+
+    comments = (
+        db.query(Comment)
+        .filter(Comment.list_id == list_id)
+        .order_by(Comment.created_at.desc())
+        .all()
+    )
+    return [_comment_to_out(c) for c in comments]
+
+
+@app.post("/api/lists/{list_id}/comments", response_model=CommentOut, status_code=201)
+def create_comment(
+    list_id: int,
+    data: CommentCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    lst = db.query(List).filter(List.id == list_id).first()
+    if not lst:
+        raise HTTPException(status_code=404, detail="List not found")
+
+    comment = Comment(
+        text=data.text,
+        list_id=list_id,
+        author_id=current_user.id,
+        item_id=data.item_id,
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return _comment_to_out(comment)
+
+
 @app.get("/api/lists/{username}/{slug}", response_model=ListDetail)
 def get_list(
     username: str,
@@ -280,46 +318,6 @@ def delete_item(
 
     db.delete(item)
     db.commit()
-
-
-# --- Comments ---
-
-@app.get("/api/lists/{list_id}/comments", response_model=list[CommentOut])
-def list_comments(list_id: int, db: Session = Depends(get_db)):
-    lst = db.query(List).filter(List.id == list_id).first()
-    if not lst:
-        raise HTTPException(status_code=404, detail="List not found")
-
-    comments = (
-        db.query(Comment)
-        .filter(Comment.list_id == list_id)
-        .order_by(Comment.created_at.desc())
-        .all()
-    )
-    return [_comment_to_out(c) for c in comments]
-
-
-@app.post("/api/lists/{list_id}/comments", response_model=CommentOut, status_code=201)
-def create_comment(
-    list_id: int,
-    data: CommentCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    lst = db.query(List).filter(List.id == list_id).first()
-    if not lst:
-        raise HTTPException(status_code=404, detail="List not found")
-
-    comment = Comment(
-        text=data.text,
-        list_id=list_id,
-        author_id=current_user.id,
-        item_id=data.item_id,
-    )
-    db.add(comment)
-    db.commit()
-    db.refresh(comment)
-    return _comment_to_out(comment)
 
 
 @app.patch("/api/comments/{comment_id}", response_model=CommentOut)
