@@ -6,13 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from .database import engine, get_db, Base
-from .models import User, List, ListItem, Comment
+from .models import User, List, ListItem, Comment, Like
 from pydantic import BaseModel
+from sqlalchemy import func
 from .schemas import (
     UserCreate, UserLogin, UserOut, TokenOut,
     ListCreate, ListUpdate, ListOut, ListDetail,
     ListItemCreate, ListItemUpdate, ListItemOut,
-    CommentCreate, CommentOut,
+    CommentCreate, CommentUpdate, CommentOut,
+    LikeCreate, LikeOut, LikeSummary,
 )
 from .auth import (
     hash_password, verify_password, create_access_token,
@@ -332,6 +334,17 @@ def create_comment(
     return _comment_to_out(comment)
 
 
+@app.patch("/api/comments/{comment_id}", response_model=CommentOut)
+def update_comment(comment_id: int, data: CommentUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    comment = db.query(Comment).filter(Comment.id == comment_id, Comment.author_id == current_user.id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    comment.text = data.text
+    db.commit()
+    db.refresh(comment)
+    return _comment_to_out(comment)
+
+
 @app.delete("/api/comments/{comment_id}", status_code=204)
 def delete_comment(comment_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     comment = db.query(Comment).filter(Comment.id == comment_id, Comment.author_id == current_user.id).first()
@@ -339,6 +352,78 @@ def delete_comment(comment_id: int, current_user: User = Depends(get_current_use
         raise HTTPException(status_code=404, detail="Comment not found")
     db.delete(comment)
     db.commit()
+
+
+# --- Likes ---
+
+@app.post("/api/likes", response_model=LikeOut, status_code=201)
+def toggle_like(data: LikeCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    query = db.query(Like).filter(Like.user_id == current_user.id, Like.emoji == data.emoji)
+    if data.list_id:
+        query = query.filter(Like.list_id == data.list_id)
+    if data.item_id:
+        query = query.filter(Like.item_id == data.item_id)
+
+    existing = query.first()
+    if existing:
+        db.delete(existing)
+        db.commit()
+        # Return the deleted like with id=-1 to signal removal
+        return LikeOut(id=-1, user_id=current_user.id, list_id=data.list_id, item_id=data.item_id, emoji=data.emoji, created_at=existing.created_at)
+
+    like = Like(
+        user_id=current_user.id,
+        list_id=data.list_id,
+        item_id=data.item_id,
+        emoji=data.emoji,
+    )
+    db.add(like)
+    db.commit()
+    db.refresh(like)
+    return like
+
+
+@app.get("/api/likes/list/{list_id}", response_model=list[LikeSummary])
+def get_list_likes(list_id: int, current_user: User | None = Depends(get_optional_user), db: Session = Depends(get_db)):
+    results = (
+        db.query(Like.emoji, func.count(Like.id))
+        .filter(Like.list_id == list_id, Like.item_id.is_(None))
+        .group_by(Like.emoji)
+        .all()
+    )
+    user_likes = set()
+    if current_user:
+        user_likes = {
+            l.emoji for l in db.query(Like).filter(
+                Like.list_id == list_id, Like.item_id.is_(None), Like.user_id == current_user.id
+            ).all()
+        }
+    return [LikeSummary(emoji=emoji, count=count, user_liked=emoji in user_likes) for emoji, count in results]
+
+
+@app.get("/api/likes/items/{list_id}", response_model=dict[str, list[LikeSummary]])
+def get_item_likes(list_id: int, current_user: User | None = Depends(get_optional_user), db: Session = Depends(get_db)):
+    results = (
+        db.query(Like.item_id, Like.emoji, func.count(Like.id))
+        .filter(Like.list_id == list_id, Like.item_id.isnot(None))
+        .group_by(Like.item_id, Like.emoji)
+        .all()
+    )
+    user_likes = set()
+    if current_user:
+        user_likes = {
+            (l.item_id, l.emoji) for l in db.query(Like).filter(
+                Like.list_id == list_id, Like.item_id.isnot(None), Like.user_id == current_user.id
+            ).all()
+        }
+
+    item_map: dict[str, list[LikeSummary]] = {}
+    for item_id, emoji, count in results:
+        key = str(item_id)
+        if key not in item_map:
+            item_map[key] = []
+        item_map[key].append(LikeSummary(emoji=emoji, count=count, user_liked=(item_id, emoji) in user_likes))
+    return item_map
 
 
 # --- User Profiles ---

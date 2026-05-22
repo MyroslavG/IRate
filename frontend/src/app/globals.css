@@ -1322,6 +1322,114 @@ body {
   margin-bottom: 0;
 }
 
+/* --- LIKES --- */
+.like-buttons {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.like-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.2rem 0.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all 0.15s;
+}
+
+.like-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.like-btn.liked {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.like-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.like-count {
+  font-weight: 600;
+}
+
+/* --- COMMENT ACTIONS --- */
+.comment-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.comment:hover .comment-actions {
+  opacity: 1;
+}
+
+.comment-actions button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.15rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.comment-actions button:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.comment-edit-form {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.comment-edit-form input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.comment-edit-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.comment-cancel {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.comment-cancel:hover {
+  color: var(--red);
+}
+
 /* --- HAMBURGER MENU --- */
 .navbar-toggle {
   display: none;

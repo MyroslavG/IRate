@@ -95,3 +95,18 @@ class Comment(Base):
 
     list = relationship("List", back_populates="comments")
     author_user = relationship("User", back_populates="comments")
+
+
+class Like(Base):
+    __tablename__ = "likes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    list_id = Column(Integer, ForeignKey("lists.id"), nullable=True)
+    item_id = Column(Integer, ForeignKey("list_items.id"), nullable=True)
+    emoji = Column(String(10), default="heart")  # heart, fire, star, etc.
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User")
+    list_rel = relationship("List")
+    item = relationship("ListItem")

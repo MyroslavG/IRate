@@ -99,6 +99,10 @@ class CommentCreate(BaseModel):
     item_id: int | None = None  # null = list-level comment
 
 
+class CommentUpdate(BaseModel):
+    text: str = Field(min_length=1, max_length=1000)
+
+
 class CommentOut(BaseModel):
     id: int
     text: str
@@ -107,3 +111,28 @@ class CommentOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# --- Likes ---
+
+class LikeCreate(BaseModel):
+    list_id: int | None = None
+    item_id: int | None = None
+    emoji: str = "heart"
+
+
+class LikeOut(BaseModel):
+    id: int
+    user_id: int
+    list_id: int | None
+    item_id: int | None
+    emoji: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class LikeSummary(BaseModel):
+    emoji: str
+    count: int
+    user_liked: bool

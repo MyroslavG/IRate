@@ -3,11 +3,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Share2, ArrowLeft, Copy, User, MessageCircle, Send } from "lucide-react";
+import { Plus, Share2, ArrowLeft, Copy, User, MessageCircle, Send, Heart, Flame, Star, Pencil, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import ShareModal from "../../../components/ShareModal";
-import { api, ListDetail, ListItemOut, CommentOut } from "../../../lib/api";
+import { api, ListDetail, ListItemOut, CommentOut, LikeSummary } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth-context";
+
+const EMOJIS = [
+  { key: "heart", icon: <Heart size={14} />, label: "Love" },
+  { key: "fire", icon: <Flame size={14} />, label: "Fire" },
+  { key: "star", icon: <Star size={14} />, label: "Star" },
+];
 
 function renderStars(score: number) {
   const fullStars = Math.floor(score);
@@ -42,6 +48,10 @@ export default function ListClient() {
   const [newComment, setNewComment] = useState("");
   const [replyingToItem, setReplyingToItem] = useState<number | null>(null);
   const [showItemComments, setShowItemComments] = useState<number | null>(null);
+  const [editingComment, setEditingComment] = useState<number | null>(null);
+  const [editCommentText, setEditCommentText] = useState("");
+  const [listLikes, setListLikes] = useState<LikeSummary[]>([]);
+  const [itemLikes, setItemLikes] = useState<Record<string, LikeSummary[]>>({});
 
   const isOwner = user && listData ? user.username === listData.owner.username : false;
 
@@ -55,8 +65,9 @@ export default function ListClient() {
           if (b.score === 0) return -1;
           return b.score - a.score;
         }));
-        // Load comments
         api.getComments(data.id).then(setComments).catch(() => {});
+        api.getListLikes(data.id).then(setListLikes).catch(() => {});
+        api.getItemLikes(data.id).then(setItemLikes).catch(() => {});
       })
       .catch(() => setError("List not found"))
       .finally(() => setLoading(false));
@@ -162,6 +173,47 @@ export default function ListClient() {
     }
   };
 
+  const handleEditComment = async (commentId: number) => {
+    if (!editCommentText.trim()) return;
+    try {
+      const updated = await api.updateComment(commentId, editCommentText.trim());
+      setComments(comments.map((c) => c.id === commentId ? updated : c));
+      setEditingComment(null);
+      setEditCommentText("");
+    } catch (err) {
+      console.error("Failed to edit comment:", err);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    try {
+      await api.deleteComment(commentId);
+      setComments(comments.filter((c) => c.id !== commentId));
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+    }
+  };
+
+  const handleToggleLike = async (emoji: string, itemId?: number) => {
+    if (!user) return;
+    try {
+      await api.toggleLike({
+        list_id: listData.id,
+        item_id: itemId,
+        emoji,
+      });
+      if (itemId) {
+        const updated = await api.getItemLikes(listData.id);
+        setItemLikes(updated);
+      } else {
+        const updated = await api.getListLikes(listData.id);
+        setListLikes(updated);
+      }
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
+    }
+  };
+
   const handleStarClick = (n: number, e: React.MouseEvent<HTMLSpanElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -178,6 +230,64 @@ export default function ListClient() {
 
   const displayScore = hoverScore || form.score;
 
+  const renderComment = (c: CommentOut) => (
+    <motion.div
+      key={c.id}
+      className="comment"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      {editingComment === c.id ? (
+        <div className="comment-edit-form">
+          <input
+            value={editCommentText}
+            onChange={(e) => setEditCommentText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleEditComment(c.id); if (e.key === "Escape") setEditingComment(null); }}
+            autoFocus
+          />
+          <button className="comment-send" onClick={() => handleEditComment(c.id)}><Send size={12} /></button>
+          <button className="comment-cancel" onClick={() => setEditingComment(null)}><X size={12} /></button>
+        </div>
+      ) : (
+        <>
+          <Link href={c.author.username === user?.username ? "/profile" : `/profile/${c.author.username}`} className="comment-author">@{c.author.username}</Link>
+          <span className="comment-text">{c.text}</span>
+          <span className="comment-time">{new Date(c.created_at).toLocaleDateString()}</span>
+          {user && c.author.username === user.username && (
+            <span className="comment-actions">
+              <button onClick={() => { setEditingComment(c.id); setEditCommentText(c.text); }}><Pencil size={11} /></button>
+              <button onClick={() => handleDeleteComment(c.id)}><Trash2 size={11} /></button>
+            </span>
+          )}
+        </>
+      )}
+    </motion.div>
+  );
+
+  const renderLikeButtons = (itemId?: number) => {
+    const likes = itemId ? (itemLikes[String(itemId)] || []) : listLikes;
+    return (
+      <div className="like-buttons">
+        {EMOJIS.map(({ key, icon }) => {
+          const likeSummary = likes.find((l) => l.emoji === key);
+          const count = likeSummary?.count || 0;
+          const userLiked = likeSummary?.user_liked || false;
+          return (
+            <button
+              key={key}
+              className={`like-btn ${userLiked ? "liked" : ""}`}
+              onClick={(e) => { e.stopPropagation(); handleToggleLike(key, itemId); }}
+              disabled={!user}
+            >
+              {icon}
+              {count > 0 && <span className="like-count">{count}</span>}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="container">
       <div className="list-top-bar">
@@ -193,36 +303,28 @@ export default function ListClient() {
       <div className="list-header">
         <h2>{listData.title}</h2>
         <p className="description">{listData.description}</p>
+        {renderLikeButtons()}
       </div>
 
-      {/* Comments section - only on other people's lists */}
-      {!isOwner && user && (
+      {/* Comments section - visible to all logged in users */}
+      {user && (
         <div className="comments-section">
           <h3><MessageCircle size={16} /> Comments <span className="comment-count">{comments.filter((c) => !c.item_id).length}</span></h3>
-          <form className="comment-input" onSubmit={(e) => handlePostComment(e)}>
-            <input
-              value={replyingToItem === null ? newComment : ""}
-              onFocus={() => setReplyingToItem(null)}
-              onChange={(e) => { setReplyingToItem(null); setNewComment(e.target.value); }}
-              placeholder="Add a comment..."
-            />
-            <button type="submit" className="comment-send"><Send size={14} /></button>
-          </form>
+          {!isOwner && (
+            <form className="comment-input" onSubmit={(e) => handlePostComment(e)}>
+              <input
+                value={replyingToItem === null ? newComment : ""}
+                onFocus={() => setReplyingToItem(null)}
+                onChange={(e) => { setReplyingToItem(null); setNewComment(e.target.value); }}
+                placeholder="Add a comment..."
+              />
+              <button type="submit" className="comment-send"><Send size={14} /></button>
+            </form>
+          )}
           <div className="comments-list">
-            {comments.filter((c) => !c.item_id).map((c) => (
-              <motion.div
-                key={c.id}
-                className="comment"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <Link href={c.author.username === user?.username ? "/profile" : `/profile/${c.author.username}`} className="comment-author">@{c.author.username}</Link>
-                <span className="comment-text">{c.text}</span>
-                <span className="comment-time">{new Date(c.created_at).toLocaleDateString()}</span>
-              </motion.div>
-            ))}
+            {comments.filter((c) => !c.item_id).map(renderComment)}
             {comments.filter((c) => !c.item_id).length === 0 && (
-              <p className="no-comments">No comments yet. Be the first!</p>
+              <p className="no-comments">No comments yet.{!isOwner ? " Be the first!" : ""}</p>
             )}
           </div>
         </div>
@@ -271,17 +373,18 @@ export default function ListClient() {
                 transition={{ duration: 0.2, delay: i * 0.03 }}
               >
                 <div
-                  className={`item-row ${!isOwner ? "readonly" : ""}`}
+                  className={`item-row ${isOwner ? "" : "readonly"}`}
                   onClick={() => isOwner ? handleEdit(item) : setShowItemComments(showItemComments === item.id ? null : item.id)}
                 >
                   <span className="item-rank">{i + 1}</span>
                   <div className="item-info">
                     <h4>{item.name}</h4>
                     {item.comment && <p className="note">{item.comment}</p>}
+                    {renderLikeButtons(item.id)}
                   </div>
                   <div className="item-rating">
                     <span className={`score ${item.score === 0 ? "unrated" : ""}`}>{item.score > 0 ? item.score : "—"}</span>
-                    {!isOwner && itemComments.length > 0 && (
+                    {itemComments.length > 0 && (
                       <span className="item-comment-count">
                         <MessageCircle size={12} /> {itemComments.length}
                       </span>
@@ -297,13 +400,7 @@ export default function ListClient() {
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                     >
-                      {itemComments.map((c) => (
-                        <div key={c.id} className="comment">
-                          <Link href={c.author.username === user?.username ? "/profile" : `/profile/${c.author.username}`} className="comment-author">@{c.author.username}</Link>
-                          <span className="comment-text">{c.text}</span>
-                          <span className="comment-time">{new Date(c.created_at).toLocaleDateString()}</span>
-                        </div>
-                      ))}
+                      {itemComments.map(renderComment)}
                       <form className="comment-input" onSubmit={(e) => handlePostComment(e, item.id)}>
                         <input
                           value={replyingToItem === item.id ? newComment : ""}

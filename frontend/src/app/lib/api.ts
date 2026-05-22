@@ -156,6 +156,33 @@ class ApiClient {
     });
   }
 
+  async updateComment(commentId: number, text: string) {
+    return this.request<CommentOut>(`/api/comments/${commentId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ text }),
+    });
+  }
+
+  async deleteComment(commentId: number) {
+    return this.request<void>(`/api/comments/${commentId}`, { method: "DELETE" });
+  }
+
+  // Likes
+  async toggleLike(data: { list_id?: number; item_id?: number; emoji?: string }) {
+    return this.request<LikeOut>("/api/likes", {
+      method: "POST",
+      body: JSON.stringify({ ...data, emoji: data.emoji || "heart" }),
+    });
+  }
+
+  async getListLikes(listId: number) {
+    return this.request<LikeSummary[]>(`/api/likes/list/${listId}`);
+  }
+
+  async getItemLikes(listId: number) {
+    return this.request<Record<string, LikeSummary[]>>(`/api/likes/items/${listId}`);
+  }
+
   // Users
   async getUserProfile(username: string) {
     return this.request<User>(`/api/users/${username}`);
@@ -226,6 +253,21 @@ export interface CommentOut {
   item_id: number | null;
   author: User;
   created_at: string;
+}
+
+export interface LikeOut {
+  id: number;
+  user_id: number;
+  list_id: number | null;
+  item_id: number | null;
+  emoji: string;
+  created_at: string;
+}
+
+export interface LikeSummary {
+  emoji: string;
+  count: number;
+  user_liked: boolean;
 }
 
 // Singleton
