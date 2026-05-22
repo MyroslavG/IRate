@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Heart } from "lucide-react";
 import { api, ListOut } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import SignInModal from "../components/SignInModal";
@@ -161,6 +161,11 @@ export default function ExplorePage() {
                 <div className="list-card-stats">
                   <div className="count">{list.item_count}</div>
                   items
+                  {list.like_count > 0 && (
+                    <div className="list-card-likes">
+                      <Heart size={12} /> {list.like_count}
+                    </div>
+                  )}
                 </div>
               </Link>
             </motion.div>

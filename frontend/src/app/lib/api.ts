@@ -229,6 +229,7 @@ export interface ListOut {
   category: string | null;
   is_public: boolean;
   item_count: number;
+  like_count: number;
   owner: User;
   created_at: string;
   updated_at: string;

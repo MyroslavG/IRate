@@ -115,7 +115,7 @@ def list_public_lists(
     if search:
         query = query.filter(List.title.ilike(f"%{search}%"))
     lists = query.order_by(List.updated_at.desc()).offset(skip).limit(limit).all()
-    return [_list_to_out(l) for l in lists]
+    return [_list_to_out(l, db) for l in lists]
 
 
 @app.get("/api/lists/mine", response_model=list[ListOut])
@@ -124,7 +124,7 @@ def list_my_lists(
     db: Session = Depends(get_db),
 ):
     lists = db.query(List).filter(List.owner_id == current_user.id).order_by(List.updated_at.desc()).all()
-    return [_list_to_out(l) for l in lists]
+    return [_list_to_out(l, db) for l in lists]
 
 
 @app.post("/api/lists", response_model=ListDetail, status_code=201)
@@ -184,7 +184,7 @@ def update_list(list_id: int, data: ListUpdate, current_user: User = Depends(get
 
     db.commit()
     db.refresh(lst)
-    return _list_to_out(lst)
+    return _list_to_out(lst, db)
 
 
 @app.delete("/api/lists/{list_id}", status_code=204)
@@ -452,7 +452,7 @@ def get_user_lists(
         query = query.filter(List.is_public == True)
 
     lists = query.order_by(List.updated_at.desc()).all()
-    return [_list_to_out(l) for l in lists]
+    return [_list_to_out(l, db) for l in lists]
 
 
 # --- Categories ---
@@ -472,7 +472,10 @@ def health():
 
 # --- Response helpers ---
 
-def _list_to_out(lst: List) -> ListOut:
+def _list_to_out(lst: List, db: Session | None = None) -> ListOut:
+    like_count = 0
+    if db:
+        like_count = db.query(func.count(Like.id)).filter(Like.list_id == lst.id).scalar() or 0
     return ListOut(
         id=lst.id,
         slug=lst.slug,
@@ -481,6 +484,7 @@ def _list_to_out(lst: List) -> ListOut:
         category=lst.category,
         is_public=lst.is_public,
         item_count=lst.item_count,
+        like_count=like_count,
         owner=UserOut.model_validate(lst.owner_user),
         created_at=lst.created_at,
         updated_at=lst.updated_at,

@@ -385,7 +385,10 @@ export default function ListClient() {
                   <div className="item-rating">
                     <span className={`score ${item.score === 0 ? "unrated" : ""}`}>{item.score > 0 ? item.score : "—"}</span>
                     {itemComments.length > 0 && (
-                      <span className="item-comment-count">
+                      <span
+                        className="item-comment-count"
+                        onClick={(e) => { e.stopPropagation(); setShowItemComments(showItemComments === item.id ? null : item.id); }}
+                      >
                         <MessageCircle size={12} /> {itemComments.length}
                       </span>
                     )}
@@ -393,7 +396,7 @@ export default function ListClient() {
                 </div>
 
                 <AnimatePresence>
-                  {showItemComments === item.id && !isOwner && user && (
+                  {showItemComments === item.id && user && (
                     <motion.div
                       className="item-comments"
                       initial={{ opacity: 0, height: 0 }}
@@ -401,15 +404,18 @@ export default function ListClient() {
                       exit={{ opacity: 0, height: 0 }}
                     >
                       {itemComments.map(renderComment)}
-                      <form className="comment-input" onSubmit={(e) => handlePostComment(e, item.id)}>
-                        <input
-                          value={replyingToItem === item.id ? newComment : ""}
-                          onFocus={() => setReplyingToItem(item.id)}
-                          onChange={(e) => { setReplyingToItem(item.id); setNewComment(e.target.value); }}
-                          placeholder={`Comment on "${item.name}"...`}
-                        />
-                        <button type="submit" className="comment-send"><Send size={14} /></button>
-                      </form>
+                      {itemComments.length === 0 && <p className="no-comments">No comments on this item.</p>}
+                      {!isOwner && (
+                        <form className="comment-input" onSubmit={(e) => handlePostComment(e, item.id)}>
+                          <input
+                            value={replyingToItem === item.id ? newComment : ""}
+                            onFocus={() => setReplyingToItem(item.id)}
+                            onChange={(e) => { setReplyingToItem(item.id); setNewComment(e.target.value); }}
+                            placeholder={`Comment on "${item.name}"...`}
+                          />
+                          <button type="submit" className="comment-send"><Send size={14} /></button>
+                        </form>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

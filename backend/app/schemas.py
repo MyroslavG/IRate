@@ -81,6 +81,7 @@ class ListOut(BaseModel):
     category: str | None
     is_public: bool
     item_count: int
+    like_count: int = 0
     owner: UserOut
     created_at: datetime
     updated_at: datetime
