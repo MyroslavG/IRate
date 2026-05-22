@@ -92,12 +92,6 @@ export default function Navbar() {
               <Bell size={16} />
               {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
             </button>
-            {showNotifs && (
-              <NotificationsDropdown
-                onClose={() => setShowNotifs(false)}
-                onRead={() => setUnreadCount(0)}
-              />
-            )}
           </div>
         )}
         <button
@@ -134,12 +128,6 @@ export default function Navbar() {
               <Bell size={16} />
               {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
             </button>
-            {showNotifs && (
-              <NotificationsDropdown
-                onClose={() => setShowNotifs(false)}
-                onRead={() => setUnreadCount(0)}
-              />
-            )}
           </div>
         )}
         {!loading && !user && (
@@ -151,6 +139,12 @@ export default function Navbar() {
           </button>
         )}
       </div>
+      {user && showNotifs && (
+        <NotificationsDropdown
+          onClose={() => setShowNotifs(false)}
+          onRead={() => setUnreadCount(0)}
+        />
+      )}
     </nav>
   );
 }
