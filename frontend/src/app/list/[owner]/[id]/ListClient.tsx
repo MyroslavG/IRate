@@ -290,7 +290,9 @@ export default function ListClient() {
     <div className="container">
       <div className="list-top-bar">
         <button className="back-link" onClick={() => router.back()}><ArrowLeft size={14} /> Back</button>
-        {!isOwner && (
+        {isOwner ? (
+          <span className="owner-badge">Your list</span>
+        ) : (
           <Link href={`/profile/${listData.owner.username}`} className="owner-banner clickable">
             <User size={14} />
             <span>@{listData.owner.username}&apos;s list</span>
