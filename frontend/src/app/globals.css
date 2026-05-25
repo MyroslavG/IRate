@@ -26,6 +26,7 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -46,6 +47,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
+  overflow: visible;
 }
 
 .navbar-brand {
@@ -1831,10 +1833,11 @@ body {
 .notif-dropdown {
   position: absolute;
   top: calc(100% + 0.75rem);
-  right: -0.5rem;
+  right: 1rem;
   width: 340px;
   max-height: 420px;
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
