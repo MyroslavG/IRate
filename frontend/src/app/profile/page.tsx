@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Globe, Lock } from "lucide-react";
-import { api, ListOut, FollowStats } from "../lib/api";
+import { Globe, Lock, X } from "lucide-react";
+import { api, User, ListOut, FollowStats } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 
 export default function ProfilePage() {
@@ -14,6 +14,9 @@ export default function ProfilePage() {
   const [lists, setLists] = useState<ListOut[]>([]);
   const [followStats, setFollowStats] = useState<FollowStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [followModal, setFollowModal] = useState<"followers" | "following" | null>(null);
+  const [followList, setFollowList] = useState<User[]>([]);
+  const [followListLoading, setFollowListLoading] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -34,6 +37,21 @@ export default function ProfilePage() {
     } catch (err) {
       console.error("Failed to toggle visibility:", err);
     }
+  };
+
+  const openFollowModal = async (type: "followers" | "following") => {
+    if (!user) return;
+    setFollowModal(type);
+    setFollowListLoading(true);
+    try {
+      const data = type === "followers"
+        ? await api.getFollowers(user.username)
+        : await api.getFollowing(user.username);
+      setFollowList(data);
+    } catch {
+      setFollowList([]);
+    }
+    setFollowListLoading(false);
   };
 
   if (authLoading || loading) {
@@ -72,11 +90,11 @@ export default function ProfilePage() {
         </div>
         {followStats && (
           <>
-            <div className="profile-stat">
+            <div className="profile-stat clickable" onClick={() => openFollowModal("followers")}>
               <div className="value">{followStats.followers_count}</div>
               <div className="label">Followers</div>
             </div>
-            <div className="profile-stat">
+            <div className="profile-stat clickable" onClick={() => openFollowModal("following")}>
               <div className="value">{followStats.following_count}</div>
               <div className="label">Following</div>
             </div>
@@ -122,6 +140,45 @@ export default function ProfilePage() {
       {lists.length === 0 && (
         <div className="empty-state">
           <p>No lists yet. <Link href="/lists">Create your first one!</Link></p>
+        </div>
+      )}
+
+      {followModal && (
+        <div className="follow-modal-overlay" onClick={() => setFollowModal(null)}>
+          <div className="follow-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="follow-modal-header">
+              <h3>{followModal === "followers" ? "Followers" : "Following"}</h3>
+              <button className="follow-modal-close" onClick={() => setFollowModal(null)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="follow-modal-list">
+              {followListLoading ? (
+                <div className="follow-modal-empty">Loading...</div>
+              ) : followList.length === 0 ? (
+                <div className="follow-modal-empty">
+                  {followModal === "followers" ? "No followers yet" : "Not following anyone"}
+                </div>
+              ) : (
+                followList.map((u) => (
+                  <Link
+                    key={u.id}
+                    href={`/profile/${u.username}`}
+                    className="follow-modal-user"
+                    onClick={() => setFollowModal(null)}
+                  >
+                    <div className="follow-modal-avatar">
+                      {(u.display_name || u.username)[0].toUpperCase()}
+                    </div>
+                    <div className="follow-modal-info">
+                      <span className="follow-modal-name">{u.display_name || u.username}</span>
+                      <span className="follow-modal-username">@{u.username}</span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
