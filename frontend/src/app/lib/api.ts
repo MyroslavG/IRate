@@ -205,6 +205,14 @@ class ApiClient {
     return this.request<FollowStats>(`/api/follow/${username}/stats`);
   }
 
+  async getFollowers(username: string) {
+    return this.request<User[]>(`/api/follow/${username}/followers`);
+  }
+
+  async getFollowing(username: string) {
+    return this.request<User[]>(`/api/follow/${username}/following`);
+  }
+
   // Notifications
   async getNotifications() {
     return this.request<NotificationOut[]>("/api/notifications");

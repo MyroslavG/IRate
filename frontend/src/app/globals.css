@@ -1030,6 +1030,129 @@ body {
   letter-spacing: 0.04em;
 }
 
+.profile-stat.clickable {
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  margin: -0.4rem -0.6rem;
+  transition: background 0.15s;
+}
+
+.profile-stat.clickable:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* --- FOLLOW MODAL --- */
+.follow-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.follow-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 360px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.follow-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.follow-modal-header h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.follow-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.follow-modal-close:hover {
+  color: var(--text);
+}
+
+.follow-modal-list {
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.follow-modal-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.follow-modal-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.follow-modal-user:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.follow-modal-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.follow-modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.follow-modal-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.follow-modal-username {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 /* --- TABS --- */
 .profile-tabs {
   display: flex;

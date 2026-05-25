@@ -515,6 +515,24 @@ def get_follow_stats(username: str, current_user: User | None = Depends(get_opti
     return FollowStats(followers_count=followers_count, following_count=following_count, is_following=is_following)
 
 
+@app.get("/api/follow/{username}/followers", response_model=list[UserOut])
+def get_followers(username: str, db: Session = Depends(get_db)):
+    target = db.query(User).filter(User.username == username).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    follows = db.query(Follow).filter(Follow.following_id == target.id).all()
+    return [f.follower for f in follows]
+
+
+@app.get("/api/follow/{username}/following", response_model=list[UserOut])
+def get_following(username: str, db: Session = Depends(get_db)):
+    target = db.query(User).filter(User.username == username).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    follows = db.query(Follow).filter(Follow.follower_id == target.id).all()
+    return [f.following for f in follows]
+
+
 # --- Notifications ---
 
 @app.get("/api/notifications", response_model=list[NotificationOut])

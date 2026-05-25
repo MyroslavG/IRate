@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, UserPlus, UserMinus, Heart } from "lucide-react";
+import { ArrowLeft, UserPlus, UserMinus, Heart, X } from "lucide-react";
 import Link from "next/link";
 import { api, User, ListOut, FollowStats } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
@@ -18,6 +18,9 @@ export default function ProfileClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [followModal, setFollowModal] = useState<"followers" | "following" | null>(null);
+  const [followList, setFollowList] = useState<User[]>([]);
+  const [followListLoading, setFollowListLoading] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -47,6 +50,20 @@ export default function ProfileClient() {
       }
     } catch {}
     setFollowLoading(false);
+  };
+
+  const openFollowModal = async (type: "followers" | "following") => {
+    setFollowModal(type);
+    setFollowListLoading(true);
+    try {
+      const data = type === "followers"
+        ? await api.getFollowers(username as string)
+        : await api.getFollowing(username as string);
+      setFollowList(data);
+    } catch {
+      setFollowList([]);
+    }
+    setFollowListLoading(false);
   };
 
   if (loading) {
@@ -99,11 +116,11 @@ export default function ProfileClient() {
         </div>
         {followStats && (
           <>
-            <div className="profile-stat">
+            <div className="profile-stat clickable" onClick={() => openFollowModal("followers")}>
               <div className="value">{followStats.followers_count}</div>
               <div className="label">Followers</div>
             </div>
-            <div className="profile-stat">
+            <div className="profile-stat clickable" onClick={() => openFollowModal("following")}>
               <div className="value">{followStats.following_count}</div>
               <div className="label">Following</div>
             </div>
@@ -145,6 +162,45 @@ export default function ProfileClient() {
               </Link>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {followModal && (
+        <div className="follow-modal-overlay" onClick={() => setFollowModal(null)}>
+          <div className="follow-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="follow-modal-header">
+              <h3>{followModal === "followers" ? "Followers" : "Following"}</h3>
+              <button className="follow-modal-close" onClick={() => setFollowModal(null)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="follow-modal-list">
+              {followListLoading ? (
+                <div className="follow-modal-empty">Loading...</div>
+              ) : followList.length === 0 ? (
+                <div className="follow-modal-empty">
+                  {followModal === "followers" ? "No followers yet" : "Not following anyone"}
+                </div>
+              ) : (
+                followList.map((u) => (
+                  <Link
+                    key={u.id}
+                    href={`/profile/${u.username}`}
+                    className="follow-modal-user"
+                    onClick={() => setFollowModal(null)}
+                  >
+                    <div className="follow-modal-avatar">
+                      {(u.display_name || u.username)[0].toUpperCase()}
+                    </div>
+                    <div className="follow-modal-info">
+                      <span className="follow-modal-name">{u.display_name || u.username}</span>
+                      <span className="follow-modal-username">@{u.username}</span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
