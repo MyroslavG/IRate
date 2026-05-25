@@ -275,7 +275,7 @@ export default function ListClient() {
               key={key}
               className={`like-btn ${userLiked ? "liked" : ""}`}
               onClick={(e) => { e.stopPropagation(); handleToggleLike(key, itemId); }}
-              disabled={!user}
+              disabled={!user || isOwner}
             >
               {icon}
               {count > 0 && <span className="like-count">{count}</span>}

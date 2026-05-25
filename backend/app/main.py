@@ -350,6 +350,18 @@ def delete_comment(comment_id: int, current_user: User = Depends(get_current_use
 
 @app.post("/api/likes", response_model=LikeOut, status_code=201)
 def toggle_like(data: LikeCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Prevent liking own content
+    if data.list_id:
+        lst = db.query(List).filter(List.id == data.list_id).first()
+        if lst and lst.owner_id == current_user.id:
+            raise HTTPException(status_code=403, detail="Cannot like your own content")
+    if data.item_id:
+        item = db.query(ListItem).filter(ListItem.id == data.item_id).first()
+        if item:
+            parent_list = db.query(List).filter(List.id == item.list_id).first()
+            if parent_list and parent_list.owner_id == current_user.id:
+                raise HTTPException(status_code=403, detail="Cannot like your own content")
+
     query = db.query(Like).filter(Like.user_id == current_user.id, Like.emoji == data.emoji)
     if data.list_id:
         query = query.filter(Like.list_id == data.list_id)
